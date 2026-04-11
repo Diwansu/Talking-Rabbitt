@@ -183,13 +183,4 @@ This version is intentionally lightweight, so it can be extended later with:
 - `frontend/package.json` — frontend dependencies and scripts
 - `backend/package.json` — backend dependencies and scripts
 
-## 🚀 Next improvements
 
-- Add a solid data preview step before chat
-- Add explicit chart request options in the UI
-- Add fallback behavior when the AI response is missing chart data
-- Add a deployed production backend and secure key handling
-
----
-
-If you want, I can also add a short `README` inside `backend/` and `frontend/` with service-specific instructions.
