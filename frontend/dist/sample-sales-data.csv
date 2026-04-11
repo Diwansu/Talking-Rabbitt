@@ -1,0 +1,21 @@
+OrderID,Region,Category,Units,Revenue,Status,Month
+1001,North,Electronics,120,48000,Completed,Jan
+1002,South,Clothing,80,6400,Completed,Jan
+1003,East,Books,60,1800,Completed,Jan
+1004,West,Home Appliances,40,22000,Pending,Jan
+1005,North,Electronics,150,61500,Completed,Feb
+1006,South,Electronics,90,37800,Completed,Feb
+1007,East,Clothing,110,9350,Completed,Feb
+1008,West,Books,75,2300,Cancelled,Feb
+1009,North,Home Appliances,55,30250,Completed,Mar
+1010,South,Books,95,2900,Completed,Mar
+1011,East,Electronics,130,53300,Completed,Mar
+1012,West,Clothing,85,7225,Pending,Mar
+1013,North,Electronics,140,57400,Completed,Apr
+1014,South,Home Appliances,50,27500,Completed,Apr
+1015,East,Books,70,2100,Completed,Apr
+1016,West,Electronics,100,41000,Completed,Apr
+1017,North,Clothing,105,8925,Completed,May
+1018,South,Electronics,115,47150,Completed,May
+1019,East,Home Appliances,45,24750,Pending,May
+1020,West,Electronics,125,51250,Completed,May
