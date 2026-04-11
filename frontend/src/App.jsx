@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import './index.css';
 
+
 export default function App() {
   const [file, setFile] = useState(null);
   const [datasetId, setDatasetId] = useState(null);
@@ -133,7 +134,7 @@ export default function App() {
     formData.append('file', uploadedFile);
 
     try {
-      const res = await axios.post('http://localhost:3001/api/upload', formData, {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setDatasetId(res.data.datasetId);
@@ -160,7 +161,7 @@ export default function App() {
     setIsTyping(true);
 
     try {
-      const res = await axios.post('http://localhost:3001/api/chat', {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}chat`, {
         datasetId,
         query: userMessage,
         chartPreference: 'bar',
