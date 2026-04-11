@@ -64,6 +64,23 @@ The backend listens on `http://localhost:3001` by default.
 ```bash
 cd frontend
 npm install
+```
+
+Create a `.env` file in `frontend/` with:
+
+```env
+VITE_BACKEND_URL=http://localhost:3001/api/
+```
+
+If you deploy the backend separately, set this to your backend deployment URL instead, for example:
+
+```env
+VITE_BACKEND_URL=https://your-backend-app.vercel.app/api/
+```
+
+Then run:
+
+```bash
 npm run dev
 ```
 
