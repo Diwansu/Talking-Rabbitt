@@ -585,6 +585,10 @@ Do NOT wrap the JSON in markdown code blocks (\`\`\`json). Just return the raw J
   }
 });
 
-app.listen(port, () => {
-  console.log(`Talking Rabbitt API Server running on port ${port}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Talking Rabbitt API Server running on port ${port}`);
+  });
+}
+
+export default app;
