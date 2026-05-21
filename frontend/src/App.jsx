@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { UploadCloud, Send, BarChart2, MessageSquare, Activity, Zap, ShieldAlert, Sparkles, Database, FileText } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-} from 'recharts';
+import UploadBox from './components/UploadBox.jsx';
+import DashboardLayout from './components/DashboardLayout.jsx';
 import './index.css';
 
+// Safe default fallback if environment variables are not loaded/configured locally
+const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001/api/';
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -14,7 +14,7 @@ export default function App() {
   const [diagnostics, setDiagnostics] = useState(null);
   const [agent, setAgent] = useState('analyst');
   const [activeTab, setActiveTab] = useState('charts');
-  
+
   const [chat, setChat] = useState([]);
   const [inputVal, setInputVal] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -92,7 +92,7 @@ export default function App() {
     }
 
     return {
-      type: 'bar',
+      type: type === 'none' ? 'bar' : type,
       title: rawChartConfig.title || 'Data Visualization',
       xAxisKey,
       dataPoints: normalizedPoints,
@@ -108,23 +108,12 @@ export default function App() {
     const tokenCount = query.split(/\s+/).filter(Boolean).length;
     const hasFilterPhrase = /\b(in|for|where|with)\b/.test(query);
 
-    // Show guidance only for short aggregate-only prompts like "total revenue".
     if (aggregateIntent && !hasGrouping && tokenCount <= 4 && !hasFilterPhrase) {
       return "Tip: For charts, include a grouping field. Try 'total revenue by category' or 'total revenue by region'.";
     }
 
     return '';
   };
-
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chat, isTyping]);
 
   const handleFileUpload = async (e) => {
     const uploadedFile = e.target.files[0];
@@ -137,17 +126,21 @@ export default function App() {
     formData.append('file', uploadedFile);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const uploadUrl = `${BACKEND_API_URL.replace(/\/$/, '')}/upload`;
+      const res = await axios.post(uploadUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setDatasetId(res.data.datasetId);
       setDiagnostics(res.data.diagnostics);
       setChat([
-        { role: 'ai', text: `Awesome! I've loaded your retail dataset with ${res.data.rowCount} rows. I ran an autonomous catalog diagnostics audit (Score: ${res.data.diagnostics?.qualityScore || 100}%). Select an agent above and ask me anything!` }
+        {
+          role: 'ai',
+          text: `Awesome! I've loaded your retail dataset with ${res.data.rowCount} rows. I ran an autonomous catalog diagnostics audit (Score: ${res.data.diagnostics?.qualityScore || 100}%). Select an agent above and ask me anything!`,
+        },
       ]);
     } catch (err) {
       console.error(err);
-      alert('Failed to upload the file. Is the backend running?');
+      alert(`Failed to connect to the API server at ${BACKEND_API_URL}. Please ensure your backend is running.`);
       setFile(null);
     } finally {
       setIsUploading(false);
@@ -160,12 +153,13 @@ export default function App() {
     const userMessage = inputVal;
     const currentHint = getChartHint(userMessage);
     setChartHint(currentHint);
-    setChat(prev => [...prev, { role: 'user', text: userMessage }]);
+    setChat((prev) => [...prev, { role: 'user', text: userMessage }]);
     setInputVal('');
     setIsTyping(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}chat`, {
+      const chatUrl = `${BACKEND_API_URL.replace(/\/$/, '')}/chat`;
+      const res = await axios.post(chatUrl, {
         datasetId,
         query: userMessage,
         chartPreference: 'bar',
@@ -175,21 +169,16 @@ export default function App() {
       const textAnswer = res.data.textAnswer || res.data.answer || 'I analyzed your data.';
       const normalizedChart = normalizeChartConfig(res.data.chartConfig || res.data.chart);
 
-      setChat(prev => [...prev, { role: 'ai', text: textAnswer }]);
-      
+      setChat((prev) => [...prev, { role: 'ai', text: textAnswer }]);
       setChartConfig(normalizedChart);
     } catch (err) {
       console.error(err);
-      setChat(prev => [...prev, { role: 'ai', text: 'Sorry, I encountered an error. Please try again.' }]);
+      setChat((prev) => [
+        ...prev,
+        { role: 'ai', text: 'Sorry, I encountered an error. Please try again.' },
+      ]);
     } finally {
       setIsTyping(false);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
     }
   };
 
@@ -201,236 +190,22 @@ export default function App() {
       </header>
 
       {!datasetId ? (
-        <div className="upload-wrapper">
-          <div className="upload-actions">
-            <label className="glass-panel upload-box">
-              {isUploading ? (
-                <div className="empty-state">
-                  <Activity size={48} className="upload-icon" style={{ animation: 'bounce 2s infinite' }} />
-                  <h3>Analyzing Catalog Data...</h3>
-                  <p>Running data diagnostics audits</p>
-                </div>
-              ) : (
-                <>
-                  <UploadCloud className="upload-icon" />
-                  <h3>Upload Retail Catalog / Sales CSV</h3>
-                  <p className="text-muted" style={{ marginTop: '0.5rem' }}>Drag & drop your inventory or transactional dataset</p>
-                  <input 
-                    type="file" 
-                    accept=".csv" 
-                    className="upload-input" 
-                    onChange={handleFileUpload} 
-                  />
-                </>
-              )}
-            </label>
-            {!isUploading && (
-              <>
-                <a
-                  className="sample-download-btn"
-                  href="/sample-sales-data.csv"
-                  download
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Download Walmart Sample Catalog
-                </a>
-                <p className="sample-download-note">Contains intentional pricing alerts, missing categories, and stock warnings for testing.</p>
-              </>
-            )}
-          </div>
-        </div>
+        <UploadBox handleFileUpload={handleFileUpload} isUploading={isUploading} />
       ) : (
-        <div className="dashboard-layout">
-          {/* Smart Dashboard / Diagnostics Audit Panel */}
-          <div className="glass-panel viz-container">
-            <div className="tabs-header">
-              <button 
-                className={`tab-btn ${activeTab === 'charts' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('charts')}
-              >
-                <BarChart2 size={16} /> Live Charts
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'diagnostics' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('diagnostics')}
-              >
-                <ShieldAlert size={16} /> Diagnostics Audit
-              </button>
-            </div>
-
-            <div className="viz-body">
-              {activeTab === 'charts' ? (
-                chartConfig.type === 'none' ? (
-                  <div className="empty-state">
-                    <Zap size={48} color="rgba(255,255,255,0.1)" />
-                    <p>Ask the <b>Analyst Agent</b> a quantitative question to generate a chart (e.g., "Compare pricing by category" or "Highest revenue by region").</p>
-                  </div>
-                ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: '#f8fafc', fontWeight: 500 }}>
-                      {chartConfig.title || 'Data Visualization'}
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={chartConfig.dataPoints} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis 
-                          dataKey={chartConfig.xAxisKey} 
-                          stroke="#94a3b8" 
-                          tick={{ fill: '#94a3b8', fontSize: 12 }} 
-                          tickMargin={10} 
-                        />
-                        <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                        <RechartsTooltip 
-                          contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #3b82f6', borderRadius: '8px', color: '#fff' }}
-                          itemStyle={{ color: '#ec4899' }}
-                        />
-                        <Bar 
-                          dataKey="value" 
-                          fill="url(#colorUv)" 
-                          radius={[4, 4, 0, 0]} 
-                          animationDuration={1500} 
-                        />
-                        <defs>
-                          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                          </linearGradient>
-                        </defs>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )
-              ) : (
-                /* Catalog Quality Audit Visualizer */
-                <div className="diagnostics-panel">
-                  <div className="diagnostics-summary">
-                    <div className="metric-card">
-                      <span className="metric-label">Catalog Health Score</span>
-                      <span className="metric-value" style={{ color: diagnostics?.qualityScore > 80 ? '#10b981' : '#f59e0b' }}>
-                        {diagnostics?.qualityScore}%
-                      </span>
-                      <div className="quality-meter-container">
-                        <div 
-                          className="quality-meter-value" 
-                          style={{ 
-                            width: `${diagnostics?.qualityScore}%`,
-                            backgroundColor: diagnostics?.qualityScore > 80 ? '#10b981' : '#f59e0b' 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div className="metric-card">
-                      <span className="metric-label">Data Completeness</span>
-                      <span className="metric-value text-blue">{diagnostics?.completeness}%</span>
-                      <p className="metric-subtext">Percentage of populated fields</p>
-                    </div>
-                  </div>
-
-                  <div className="diagnostics-details">
-                    <div className="alert-section">
-                      <h4><ShieldAlert size={16} color="#ef4444" /> Pricing & Catalog Anomalies ({diagnostics?.anomalies?.length || 0})</h4>
-                      {diagnostics?.anomalies?.length === 0 ? (
-                        <p className="clean-alert">No catalog quality alerts found.</p>
-                      ) : (
-                        <ul className="alerts-list">
-                          {diagnostics?.anomalies.map((anom, idx) => (
-                            <li key={idx} className="alert-item">{anom}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div className="alert-section">
-                      <h4><Activity size={16} color="#f59e0b" /> Inventory Stockout Warnings ({diagnostics?.stockWarnings?.length || 0})</h4>
-                      {diagnostics?.stockWarnings?.length === 0 ? (
-                        <p className="clean-alert">No stockout alerts detected.</p>
-                      ) : (
-                        <ul className="alerts-list">
-                          {diagnostics?.stockWarnings.map((warn, idx) => (
-                            <li key={idx} className="alert-item warn">{warn}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Chat Interface with Agent Routing */}
-          <div className="glass-panel chat-container">
-            <div className="chat-header">
-              <div className="agent-badge">
-                {agent === 'analyst' && <BarChart2 size={16} color="#8b5cf6" />}
-                {agent === 'diagnostics' && <ShieldAlert size={16} color="#ef4444" />}
-                {agent === 'marketing' && <Sparkles size={16} color="#ec4899" />}
-                <span>Active Agent: {agent === 'analyst' ? 'Inventory Analyst' : agent === 'diagnostics' ? 'Catalog Diagnostics' : 'Copywriter / Recs'}</span>
-              </div>
-            </div>
-
-            <div className="agent-tabs">
-              <button 
-                className={`agent-tab-btn ${agent === 'analyst' ? 'active' : ''}`}
-                onClick={() => setAgent('analyst')}
-              >
-                📊 Analyst
-              </button>
-              <button 
-                className={`agent-tab-btn ${agent === 'diagnostics' ? 'active' : ''}`}
-                onClick={() => setAgent('diagnostics')}
-              >
-                ⚠️ Diagnostics
-              </button>
-              <button 
-                className={`agent-tab-btn ${agent === 'marketing' ? 'active' : ''}`}
-                onClick={() => setAgent('marketing')}
-              >
-                🛍️ Marketing
-              </button>
-            </div>
-            
-            <div className="chat-messages">
-              {chat.map((msg, i) => (
-                <div key={i} className={`message ${msg.role}`}>
-                  {msg.text}
-                </div>
-              ))}
-              {isTyping && (
-                <div className="typing-dots">
-                  <span></span><span></span><span></span>
-                </div>
-              )}
-              {chartConfig.type === 'none' && chartHint && (
-                <div className="hint-banner">
-                  {chartHint}
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="chat-input-container">
-              <input 
-                type="text" 
-                className="chat-input" 
-                placeholder={
-                  agent === 'analyst' 
-                    ? "Ask e.g. 'Compare sales of TV vs Headphones'"
-                    : agent === 'diagnostics'
-                    ? "Ask e.g. 'Why does Electric Toothbrush have zero price?'"
-                    : "Ask e.g. 'Generate an advertising title for Office Chair'"
-                }
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isTyping}
-              />
-              <button className="send-btn" onClick={handleSend} disabled={!inputVal.trim() || isTyping}>
-                <Send size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <DashboardLayout
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          chartConfig={chartConfig}
+          diagnostics={diagnostics}
+          agent={agent}
+          setAgent={setAgent}
+          chat={chat}
+          inputVal={inputVal}
+          setInputVal={setInputVal}
+          handleSend={handleSend}
+          isTyping={isTyping}
+          chartHint={chartHint}
+        />
       )}
     </div>
   );
