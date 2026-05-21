@@ -4,7 +4,14 @@ A lightweight MVP for conversational data intelligence.
 
 This project lets users upload a CSV dataset, ask natural-language questions about the data, and receive both text answers and chart suggestions powered by an AI backend.
 
-## 🚀 Features (Pivoted for Walmart Global Tech ML/AI Internship)
+<img width="1440" height="900" alt="Screenshot 2026-05-21 at 12 42 38 PM" src="https://github.com/user-attachments/assets/6d995f36-9876-4fa6-9d0c-85177858d267" />
+<img width="1440" height="900" alt="Screenshot 2026-05-21 at 12 42 38 PM" src="https://github.com/user-attachments/assets/0d1d1afc-a1b2-43ae-8b02-4102149df6d2" />
+<img width="1440" height="900" alt="Screenshot 2026-05-21 at 12 43 37 PM" src="https://github.com/user-attachments/assets/6545e748-cd34-4853-a2ba-9cb997635681" />
+
+
+
+
+## 🚀 Features 
 
 This project has been pivoted into a **Multi-Agent Retail Intelligence & Catalog Diagnostics Platform** to align with Walmart Global Tech's ML/AI internship profile (focusing on Agentic AI, GenAI, Catalog Audits, and Pricing Risk Detection).
 
