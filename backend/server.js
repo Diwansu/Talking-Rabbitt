@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import csv from 'csv-parser';
+import os from 'os';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.use(cors());
 app.use(express.json());
 
 // Set up Multer for file uploads (storing temporarily on disk or memory)
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: os.tmpdir() });
 
 // In-memory store for CSV summaries (for MVP simplicity)
 // In a real app this would go to MongoDB
@@ -423,6 +424,88 @@ const buildDeterministicAnswerFromData = (query, datasetInfo, chartPreference) =
   return null;
 };
 
+const generateCatalogDiagnostics = (rows, headers) => {
+  let qualityScore = 100;
+  const anomalies = [];
+  const stockWarnings = [];
+  const missingFields = {};
+
+  headers.forEach((header) => {
+    missingFields[header] = 0;
+  });
+
+  rows.forEach((row) => {
+    headers.forEach((header) => {
+      const val = row[header];
+      if (val === undefined || val === null || val === '') {
+        missingFields[header]++;
+      }
+    });
+  });
+
+  let totalMissing = 0;
+  headers.forEach((header) => {
+    totalMissing += missingFields[header];
+  });
+
+  const totalPossibleCells = rows.length * headers.length;
+  const completenessPercent = totalPossibleCells > 0
+    ? ((totalPossibleCells - totalMissing) / totalPossibleCells) * 100
+    : 100;
+
+  qualityScore -= (100 - completenessPercent) * 0.5;
+
+  const findCol = (keys) => headers.find((h) => keys.some((k) => String(h).toLowerCase().includes(k)));
+  const priceCol = findCol(['price', 'msrp', 'cost']);
+  const stockCol = findCol(['stock', 'quantity', 'qty', 'on_hand']);
+  const salesCol = findCol(['sales', 'units_sold', 'revenue']);
+  const nameCol = findCol(['name', 'title', 'product']);
+  const idCol = findCol(['id', 'sku', 'code']);
+
+  rows.forEach((row) => {
+    const pName = row[nameCol] || row[idCol] || 'Unknown Product';
+
+    if (priceCol) {
+      const priceVal = toNumericValue(row[priceCol]);
+      if (priceVal !== null) {
+        if (priceVal <= 0) {
+          anomalies.push(`Pricing Error: Product '${pName}' has a price of $${priceVal}. Retail items must have positive value.`);
+          qualityScore -= 5;
+        } else if (priceVal > 5000) {
+          anomalies.push(`Pricing Outlier: Product '${pName}' has a price of $${priceVal} (unusually high).`);
+          qualityScore -= 2;
+        }
+      }
+    }
+
+    if (stockCol) {
+      const stockVal = toNumericValue(row[stockCol]);
+      if (stockVal !== null && stockVal < 0) {
+        anomalies.push(`Inventory Error: Product '${pName}' has negative stock (${stockVal}).`);
+        qualityScore -= 5;
+      }
+
+      if (stockVal === 0 && salesCol) {
+        const salesVal = toNumericValue(row[salesCol]) || toNumericValue(row['Sales_Q1']) || toNumericValue(row['Sales_Q2']) || 0;
+        if (salesVal > 0) {
+          stockWarnings.push(`Stockout Risk: Product '${pName}' is out of stock (Stock = 0) but has active sales (${salesVal} units).`);
+          qualityScore -= 3;
+        }
+      }
+    }
+  });
+
+  qualityScore = Math.max(0, Math.min(100, Math.round(qualityScore)));
+
+  return {
+    qualityScore,
+    anomalies: anomalies.slice(0, 10),
+    stockWarnings: stockWarnings.slice(0, 10),
+    completeness: Math.round(completenessPercent),
+    missingFields,
+  };
+};
+
 app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -431,7 +514,6 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   const results = [];
   const headers = [];
 
-  // Parse the uploaded CSV
   fs.createReadStream(req.file.path)
     .pipe(
       csv({
@@ -442,24 +524,21 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     .on('headers', (h) => headers.push(...h))
     .on('data', (data) => results.push(data))
     .on('end', () => {
-      // Clean up the temporary file
       fs.unlinkSync(req.file.path);
 
       const datasetId = Date.now().toString();
-
-      // Keep a summary of the dataset to send to Grok
-      // If dataset is huge, we'd only keep schema and top rows or aggregate it.
-      // For MVP, we'll store max 50 rows + schema for context
       const sampleData = results.slice(0, 50);
       const rowCount = results.length;
-
       const insights = buildDatasetInsights(results, headers);
+      const diagnostics = generateCatalogDiagnostics(results, headers);
 
       const contextStr = `
 Dataset Schema (Headers): ${headers.join(', ')}
 Total Rows: ${rowCount}
     Column Insights (computed from ALL rows):
     ${JSON.stringify(insights, null, 2)}
+    Catalog Quality Diagnostics:
+    ${JSON.stringify(diagnostics, null, 2)}
 Sample Data:
 ${JSON.stringify(sampleData, null, 2)}
       `;
@@ -469,6 +548,7 @@ ${JSON.stringify(sampleData, null, 2)}
         rowCount,
         fullData: results,
         contextStr,
+        diagnostics,
       });
 
       res.json({
@@ -476,6 +556,7 @@ ${JSON.stringify(sampleData, null, 2)}
         datasetId,
         headers,
         rowCount,
+        diagnostics,
       });
     })
     .on('error', (err) => {
@@ -484,7 +565,7 @@ ${JSON.stringify(sampleData, null, 2)}
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { datasetId, query, chartPreference = 'auto' } = req.body;
+  const { datasetId, query, chartPreference = 'auto', agent = 'analyst' } = req.body;
 
   if (!datasetId || !datasetsContext.has(datasetId)) {
     return res.status(400).json({ error: 'Invalid or missing datasetId' });
@@ -497,11 +578,21 @@ app.post('/api/chat', async (req, res) => {
   const datasetInfo = datasetsContext.get(datasetId);
 
   try {
-    // We instruct the model to return a structured JSON string
-    // containing both a 'textAnswer' and a 'chartConfig'
+    let agentInstructions = '';
+    if (agent === 'diagnostics') {
+      agentInstructions = `You are the Catalog Quality & Risk Diagnostics Agent for Rabbitt Retail.
+Focus on diagnosing catalog health, formatting anomalies, stockout risks (like zero stock items with active sales), pricing errors (like zero or negative prices), and proposing cleansing scripts (e.g. Python/JS snippets). Make your textAnswer detailed and structured. If a chart is requested or useful, construct chartConfig to show data quality metrics, missing fields count, or risk distributions.`;
+    } else if (agent === 'marketing') {
+      agentInstructions = `You are the Personalization & Marketing Copywriter Agent for Rabbitt Retail.
+Focus on creative product copywriting, advertising copy, SEO tag generation, product recommendation bundles (e.g. cross-selling category items), and market basket analysis insights based on the sales numbers. Make your textAnswer highly engaging and creative. If a chart is requested, construct a chartConfig depicting category popularity, user segments, or recommendation confidence.`;
+    } else {
+      agentInstructions = `You are the Sales & Inventory Analytics Agent for Rabbitt Retail.
+Focus on numerical trends, aggregations, computing totals/averages/counts, and resolving quantitative queries. Use the Column Insights as the mathematical ground truth. If a chart is requested, create a clean bar/line chart with xAxisKey and dataPoints.`;
+    }
+
     const systemPrompt = `
-You are Talking Rabbitt, a conversational intelligence layer for enterprise data.
-You are helping an AI Product Manager analyze their data.
+${agentInstructions}
+
 The user has uploaded a CSV dataset. Here is the summary of that dataset:
 ${datasetInfo.contextStr}
 

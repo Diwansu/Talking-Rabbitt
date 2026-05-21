@@ -1,21 +1,16 @@
-OrderID,Region,Category,Units,Revenue,Status,Month
-1001,North,Electronics,120,48000,Completed,Jan
-1002,South,Clothing,80,6400,Completed,Jan
-1003,East,Books,60,1800,Completed,Jan
-1004,West,Home Appliances,40,22000,Pending,Jan
-1005,North,Electronics,150,61500,Completed,Feb
-1006,South,Electronics,90,37800,Completed,Feb
-1007,East,Clothing,110,9350,Completed,Feb
-1008,West,Books,75,2300,Cancelled,Feb
-1009,North,Home Appliances,55,30250,Completed,Mar
-1010,South,Books,95,2900,Completed,Mar
-1011,East,Electronics,130,53300,Completed,Mar
-1012,West,Clothing,85,7225,Pending,Mar
-1013,North,Electronics,140,57400,Completed,Apr
-1014,South,Home Appliances,50,27500,Completed,Apr
-1015,East,Books,70,2100,Completed,Apr
-1016,West,Electronics,100,41000,Completed,Apr
-1017,North,Clothing,105,8925,Completed,May
-1018,South,Electronics,115,47150,Completed,May
-1019,East,Home Appliances,45,24750,Pending,May
-1020,West,Electronics,125,51250,Completed,May
+Product_ID,Product_Name,Category,Price,Stock_On_Hand,Sales_Q1,Sales_Q2,Vendor_Rating,Bar_Code_Quality
+WMT-101,UltraHD 4K Smart TV,Electronics,499.99,120,450,510,4.8,Excellent
+WMT-102,Ergonomic Office Chair,Office Furniture,129.99,85,210,195,4.2,Excellent
+WMT-103,Stainless Steel Water Bottle,Kitchenware,19.99,450,1200,1150,4.5,Excellent
+WMT-104,Premium Organic Coffee Beans,Groceries,14.99,300,850,920,4.7,Good
+WMT-105,Running Shoes Pro,Apparel,89.99,0,320,410,3.9,Poor
+WMT-106,Wireless Noise-Canceling Headphones,Electronics,199.99,15,180,210,4.6,Excellent
+WMT-107,Memory Foam Mattress,Home & Bedding,299.99,25,95,110,4.3,Good
+WMT-108,Electric Toothbrush,Personal Care,0.00,150,400,380,4.1,Missing
+WMT-109,Cast Iron Skillet,Kitchenware,34.99,60,150,140,4.4,Good
+WMT-110,Digital Air Fryer,Kitchenware,79.99,8,340,310,4.5,Excellent
+WMT-111,Men Fleece Jacket,,45.00,200,110,130,3.8,Good
+WMT-112,Yoga Mat Eco-Friendly,Apparel,29.99,140,280,310,4.2,Excellent
+WMT-113,LED Desk Lamp,Office Furniture,24.99,110,190,175,4.0,Good
+WMT-114,Smart Wifi Plug,Electronics,-12.99,90,500,480,2.5,Poor
+WMT-115,Organic Whole Milk,Groceries,3.99,500,2400,2600,4.9,Excellent

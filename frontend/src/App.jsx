@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { UploadCloud, Send, BarChart2, MessageSquare, Activity, Zap } from 'lucide-react';
+import { UploadCloud, Send, BarChart2, MessageSquare, Activity, Zap, ShieldAlert, Sparkles, Database, FileText } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
 } from 'recharts';
@@ -11,6 +11,9 @@ export default function App() {
   const [file, setFile] = useState(null);
   const [datasetId, setDatasetId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [agent, setAgent] = useState('analyst');
+  const [activeTab, setActiveTab] = useState('charts');
   
   const [chat, setChat] = useState([]);
   const [inputVal, setInputVal] = useState('');
@@ -138,8 +141,9 @@ export default function App() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setDatasetId(res.data.datasetId);
+      setDiagnostics(res.data.diagnostics);
       setChat([
-        { role: 'ai', text: `Awesome! I've loaded your data with ${res.data.rowCount} rows. What would you like to know?` }
+        { role: 'ai', text: `Awesome! I've loaded your retail dataset with ${res.data.rowCount} rows. I ran an autonomous catalog diagnostics audit (Score: ${res.data.diagnostics?.qualityScore || 100}%). Select an agent above and ask me anything!` }
       ]);
     } catch (err) {
       console.error(err);
@@ -165,6 +169,7 @@ export default function App() {
         datasetId,
         query: userMessage,
         chartPreference: 'bar',
+        agent,
       });
 
       const textAnswer = res.data.textAnswer || res.data.answer || 'I analyzed your data.';
@@ -191,8 +196,8 @@ export default function App() {
   return (
     <div className="app-container">
       <header>
-        <h1 className="gradient-text">Talking Rabbitt</h1>
-        <p>Conversational Intelligence for Enterprise Data</p>
+        <h1 className="gradient-text">Rabbitt Retail</h1>
+        <p>Multi-Agent Retail Intelligence & Catalog Diagnostics Platform</p>
       </header>
 
       {!datasetId ? (
@@ -202,14 +207,14 @@ export default function App() {
               {isUploading ? (
                 <div className="empty-state">
                   <Activity size={48} className="upload-icon" style={{ animation: 'bounce 2s infinite' }} />
-                  <h3>Analyzing Data...</h3>
-                  <p>Preparing conversational layer</p>
+                  <h3>Analyzing Catalog Data...</h3>
+                  <p>Running data diagnostics audits</p>
                 </div>
               ) : (
                 <>
                   <UploadCloud className="upload-icon" />
-                  <h3>Upload Datasets</h3>
-                  <p className="text-muted" style={{ marginTop: '0.5rem' }}>Drag & drop your CSV file here to start exploring</p>
+                  <h3>Upload Retail Catalog / Sales CSV</h3>
+                  <p className="text-muted" style={{ marginTop: '0.5rem' }}>Drag & drop your inventory or transactional dataset</p>
                   <input 
                     type="file" 
                     accept=".csv" 
@@ -227,73 +232,166 @@ export default function App() {
                   download
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Download Sample CSV
+                  Download Walmart Sample Catalog
                 </a>
-                <p className="sample-download-note">No data yet? Use this sample file to test charts and chat instantly.</p>
+                <p className="sample-download-note">Contains intentional pricing alerts, missing categories, and stock warnings for testing.</p>
               </>
             )}
           </div>
         </div>
       ) : (
         <div className="dashboard-layout">
-          {/* Smart Dashboard Layer */}
+          {/* Smart Dashboard / Diagnostics Audit Panel */}
           <div className="glass-panel viz-container">
-            <div className="viz-header">
-              <h2><BarChart2 size={24} color="#8b5cf6" /> Live Insights</h2>
+            <div className="tabs-header">
+              <button 
+                className={`tab-btn ${activeTab === 'charts' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('charts')}
+              >
+                <BarChart2 size={16} /> Live Charts
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'diagnostics' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('diagnostics')}
+              >
+                <ShieldAlert size={16} /> Diagnostics Audit
+              </button>
             </div>
+
             <div className="viz-body">
-              {chartConfig.type === 'none' ? (
-                <div className="empty-state">
-                  <Zap size={48} color="rgba(255,255,255,0.1)" />
-                  <p>Ask a question about your data to generate a chart</p>
-                </div>
+              {activeTab === 'charts' ? (
+                chartConfig.type === 'none' ? (
+                  <div className="empty-state">
+                    <Zap size={48} color="rgba(255,255,255,0.1)" />
+                    <p>Ask the <b>Analyst Agent</b> a quantitative question to generate a chart (e.g., "Compare pricing by category" or "Highest revenue by region").</p>
+                  </div>
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: '#f8fafc', fontWeight: 500 }}>
+                      {chartConfig.title || 'Data Visualization'}
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartConfig.dataPoints} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <XAxis 
+                          dataKey={chartConfig.xAxisKey} 
+                          stroke="#94a3b8" 
+                          tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                          tickMargin={10} 
+                        />
+                        <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #3b82f6', borderRadius: '8px', color: '#fff' }}
+                          itemStyle={{ color: '#ec4899' }}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          fill="url(#colorUv)" 
+                          radius={[4, 4, 0, 0]} 
+                          animationDuration={1500} 
+                        />
+                        <defs>
+                          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                          </linearGradient>
+                        </defs>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
               ) : (
-                <div style={{ width: '100%', height: '100%' }}>
-                  <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: '#f8fafc', fontWeight: 500 }}>
-                    {chartConfig.title || 'Data Visualization'}
-                  </h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartConfig.dataPoints} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis 
-                        dataKey={chartConfig.xAxisKey} 
-                        stroke="#94a3b8" 
-                        tick={{ fill: '#94a3b8', fontSize: 12 }} 
-                        tickMargin={10} 
-                      />
-                      <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid #3b82f6', borderRadius: '8px', color: '#fff' }}
-                        itemStyle={{ color: '#ec4899' }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="url(#colorUv)" 
-                        radius={[4, 4, 0, 0]} 
-                        animationDuration={1500} 
-                      />
-                      <defs>
-                        <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        </linearGradient>
-                      </defs>
-                    </BarChart>
-                  </ResponsiveContainer>
+                /* Catalog Quality Audit Visualizer */
+                <div className="diagnostics-panel">
+                  <div className="diagnostics-summary">
+                    <div className="metric-card">
+                      <span className="metric-label">Catalog Health Score</span>
+                      <span className="metric-value" style={{ color: diagnostics?.qualityScore > 80 ? '#10b981' : '#f59e0b' }}>
+                        {diagnostics?.qualityScore}%
+                      </span>
+                      <div className="quality-meter-container">
+                        <div 
+                          className="quality-meter-value" 
+                          style={{ 
+                            width: `${diagnostics?.qualityScore}%`,
+                            backgroundColor: diagnostics?.qualityScore > 80 ? '#10b981' : '#f59e0b' 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">Data Completeness</span>
+                      <span className="metric-value text-blue">{diagnostics?.completeness}%</span>
+                      <p className="metric-subtext">Percentage of populated fields</p>
+                    </div>
+                  </div>
+
+                  <div className="diagnostics-details">
+                    <div className="alert-section">
+                      <h4><ShieldAlert size={16} color="#ef4444" /> Pricing & Catalog Anomalies ({diagnostics?.anomalies?.length || 0})</h4>
+                      {diagnostics?.anomalies?.length === 0 ? (
+                        <p className="clean-alert">No catalog quality alerts found.</p>
+                      ) : (
+                        <ul className="alerts-list">
+                          {diagnostics?.anomalies.map((anom, idx) => (
+                            <li key={idx} className="alert-item">{anom}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="alert-section">
+                      <h4><Activity size={16} color="#f59e0b" /> Inventory Stockout Warnings ({diagnostics?.stockWarnings?.length || 0})</h4>
+                      {diagnostics?.stockWarnings?.length === 0 ? (
+                        <p className="clean-alert">No stockout alerts detected.</p>
+                      ) : (
+                        <ul className="alerts-list">
+                          {diagnostics?.stockWarnings.map((warn, idx) => (
+                            <li key={idx} className="alert-item warn">{warn}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Chat Interface */}
+          {/* Chat Interface with Agent Routing */}
           <div className="glass-panel chat-container">
             <div className="chat-header">
-              <MessageSquare size={20} color="#ec4899" /> Talking Rabbitt AI
+              <div className="agent-badge">
+                {agent === 'analyst' && <BarChart2 size={16} color="#8b5cf6" />}
+                {agent === 'diagnostics' && <ShieldAlert size={16} color="#ef4444" />}
+                {agent === 'marketing' && <Sparkles size={16} color="#ec4899" />}
+                <span>Active Agent: {agent === 'analyst' ? 'Inventory Analyst' : agent === 'diagnostics' ? 'Catalog Diagnostics' : 'Copywriter / Recs'}</span>
+              </div>
+            </div>
+
+            <div className="agent-tabs">
+              <button 
+                className={`agent-tab-btn ${agent === 'analyst' ? 'active' : ''}`}
+                onClick={() => setAgent('analyst')}
+              >
+                📊 Analyst
+              </button>
+              <button 
+                className={`agent-tab-btn ${agent === 'diagnostics' ? 'active' : ''}`}
+                onClick={() => setAgent('diagnostics')}
+              >
+                ⚠️ Diagnostics
+              </button>
+              <button 
+                className={`agent-tab-btn ${agent === 'marketing' ? 'active' : ''}`}
+                onClick={() => setAgent('marketing')}
+              >
+                🛍️ Marketing
+              </button>
             </div>
             
             <div className="chat-messages">
               {chat.map((msg, i) => (
-                // FIX 2: Replaced invalid \`message \${msg.role}\` with a proper template literal
                 <div key={i} className={`message ${msg.role}`}>
                   {msg.text}
                 </div>
@@ -315,7 +413,13 @@ export default function App() {
               <input 
                 type="text" 
                 className="chat-input" 
-                placeholder="Ask e.g., 'What is the total revenue by region?'"
+                placeholder={
+                  agent === 'analyst' 
+                    ? "Ask e.g. 'Compare sales of TV vs Headphones'"
+                    : agent === 'diagnostics'
+                    ? "Ask e.g. 'Why does Electric Toothbrush have zero price?'"
+                    : "Ask e.g. 'Generate an advertising title for Office Chair'"
+                }
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 onKeyDown={handleKeyDown}

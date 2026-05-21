@@ -4,29 +4,32 @@ A lightweight MVP for conversational data intelligence.
 
 This project lets users upload a CSV dataset, ask natural-language questions about the data, and receive both text answers and chart suggestions powered by an AI backend.
 
-## 🚀 What this project does
+## 🚀 Features (Pivoted for Walmart Global Tech ML/AI Internship)
 
-- Upload CSV files from the frontend
-- Parse the CSV and detect numeric/categorical columns
-- Send questions to an AI model via the backend
-- Return conversational answers and chart configuration
-- Render bar charts when the question is appropriate for visualization
+This project has been pivoted into a **Multi-Agent Retail Intelligence & Catalog Diagnostics Platform** to align with Walmart Global Tech's ML/AI internship profile (focusing on Agentic AI, GenAI, Catalog Audits, and Pricing Risk Detection).
+
+- **Autonomous Catalog Diagnostics**: Audits uploaded CSV datasets for anomalies (pricing errors, stockout risks, missing formatting) and generates a **Catalog Health Score** and **Completeness Metrics** immediately upon file upload.
+- **Multi-Agent Conversational Routing**: Supports query routing to specialized context-aware retail agents:
+  - 📊 **Inventory & Sales Analyst Agent**: Handles numbers, math, and trends, and builds interactive Recharts visualizations.
+  - ⚠️ **Catalog Quality & Risk Diagnostics Agent**: Focuses on data hygiene, identifying catalog/pricing issues, and proposing programmatic solutions (cleansing scripts).
+  - 🛍️ **Personalization & Marketing Copywriter Agent**: Generates advertising copy, SEO keywords, and dynamic product recommendations.
+- **Interactive Recharts Dashboard**: Visualizes data queries instantly with dynamically colored responsive chart layouts.
+- **Vercel Serverless Optimization**: Optimized to run fully on Vercel's serverless platform using memory/temp filesystem handling.
 
 ## 📦 Project structure
 
 - `backend/`
-  - Express server
-  - Multer file upload handling
-  - CSV parsing and dataset context storage
-  - OpenAI/Groq-compatible AI integration
-
+  - Express server, Vercel serverless configurations (`vercel.json`)
+  - Multer OS temp directory file handling
+  - CSV parsing and diagnostics audit processor
+  - OpenAI/Groq-compatible AI SDK client
 - `frontend/`
-  - React + Vite
-  - Conversational UI
-  - File upload flow
-  - Chart rendering with Recharts
+  - React + Vite Single Page App
+  - Multi-Agent selector & Glassmorphic Chat UI
+  - Catalog Diagnostics Audit dashboard
+  - Recharts live data visualization
 
-## 🧠 About this MVP
+## 🧠 About this Platform
 
 This is an MVP version that focuses on making data conversations simple.
 

@@ -421,3 +421,221 @@ header p {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
 }
+
+/* Dashboard Tabs & Visualization Panel */
+.tabs-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.75rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-btn.active {
+  color: white;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+/* Diagnostics Panel styling */
+.diagnostics-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.diagnostics-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.diagnostics-panel::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 10px;
+}
+
+.diagnostics-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 576px) {
+  .diagnostics-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.metric-value.text-blue {
+  color: var(--accent-blue);
+}
+
+.metric-subtext {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.quality-meter-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  margin-top: 0.25rem;
+  overflow: hidden;
+}
+
+.quality-meter-value {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1s ease-out;
+}
+
+.diagnostics-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.alert-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.clean-alert {
+  font-size: 0.9rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px dashed rgba(16, 185, 129, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.alerts-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert-item {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.05);
+  border-left: 3px solid #ef4444;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0 6px 6px 0;
+}
+
+.alert-item.warn {
+  color: #fde047;
+  background: rgba(245, 158, 11, 0.05);
+  border-left: 3px solid #f59e0b;
+}
+
+/* Chat routing agent buttons & badge */
+.agent-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.agent-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0.5rem;
+}
+
+.agent-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.agent-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.agent-tab-btn.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
